@@ -8,8 +8,9 @@ message Message{
     string content = 1;
     string from = 2;
     string to = 3;
+    bool broadcast = 4;
 }
 
 service MessageService{
-    rpc SendReply(stream Message) returns (stream Message){}
+    rpc SendReply(stream Message) returns (stream Message){ }
 }

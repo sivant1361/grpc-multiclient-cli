@@ -22,7 +22,6 @@ func SenderChat(stream message.MessageService_SendReplyServer, ch chan *message.
 	for {
 		value, ok := <-ch
 		if ok {
-
 			from := value.GetFrom()
 			to := value.GetTo()
 			content := value.GetContent()
@@ -37,6 +36,16 @@ func SenderChat(stream message.MessageService_SendReplyServer, ch chan *message.
 				return err
 			}
 		}
+	}
+}
+
+func Broadcast(stream message.MessageService_SendReplyServer, req *message.Message, username string) {
+	for user := range channelMapper {
+		if user == username {
+			continue
+		}
+		req.To = user
+		channelMapper[user] <- req
 	}
 }
 
@@ -61,10 +70,16 @@ func (s *messageServer) SendReply(stream message.MessageService_SendReplyServer)
 		}
 
 		log.Printf("Request from : %v", req.GetFrom())
+		if req.GetBroadcast() {
+			Broadcast(stream, req, req.GetFrom())
+			continue
+		}
+
 		if ActiveMapper[req.GetTo()] != true {
 			req.Content = "Sender named " + req.To + " not there"
 			req.To = req.GetFrom()
 		}
+
 		channelMapper[req.GetTo()] <- req
 		// messageQueue = append(messageQueue, req.Content)
 	}

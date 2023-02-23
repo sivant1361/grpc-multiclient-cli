@@ -64,31 +64,38 @@ func ChatClientFunc(client message.MessageServiceClient) {
 	}()
 
 	fmt.Print(username + "> ")
+	sendAll := false
 	for {
 		inp := getInput()
+
 		if strings.Contains(inp, "connect") {
+			sendAll = false
 			if strings.Contains(inp, "disconnect") {
 				connect = username
 			} else {
 				connect = strings.Split(inp, " ")[1]
-				fmt.Print(username + "> ")
+				fmt.Print("message> ")
 				inp = getInput()
 			}
-		}
-		if inp == "exit" {
+		} else if strings.Contains(inp, "sendall") {
+			sendAll = true
+			fmt.Print("message> ")
+			inp = getInput()
+		} else if inp == "exit" {
 			fmt.Println("")
 			break
-		} else {
-			req := &message.Message{
-				Content: inp,
-				From:    username,
-				To:      connect,
-			}
-			if err := stream.Send(req); err != nil {
-				log.Fatalf("Error while sending %v", err)
-			}
-			fmt.Print(username + "> ")
 		}
+		req := &message.Message{
+			Content:   inp,
+			From:      username,
+			To:        connect,
+			Broadcast: sendAll,
+		}
+		if err := stream.Send(req); err != nil {
+			log.Fatalf("Error while sending %v", err)
+		}
+		fmt.Print(username + "> ")
+
 		time.Sleep(time.Second / 2)
 	}
 	stream.CloseSend()
